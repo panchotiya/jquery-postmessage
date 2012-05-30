@@ -51,28 +51,10 @@ or, lacking that, see http://benalman.com/about/license/
 // 0.4 - (8/25/2009) Initial release
 
 (function($){
-  '$:nomunge'; // Used by YUI compressor.
-  
-  // A few vars used in non-awesome browsers.
-  var interval_id,
-    last_hash,
-    cache_bust = 1,
-    
-    // A var used in awesome browsers.
-    rm_callback,
-    
-    // A few convenient shortcuts.
-    FALSE = !1,
-    
-    // Reused internal strings.
-    postMessage = 'postMessage',
-    addEventListener = 'addEventListener',
-    
-    p_receiveMessage,
-    
-    has_postMessage = window[postMessage]
   
   // Method: jQuery.postMessage
+  'use strict'
+
   // 
   // This method will call window.postMessage if available, setting the
   // targetOrigin parameter to the base of the target_url parameter for maximum
@@ -95,9 +77,9 @@ or, lacking that, see http://benalman.com/about/license/
   // 
   //  True if messaging is supported and message has been (apparently) sent.
   //  False otherwise
-  
-  $[postMessage] = function( message, target_url, target ) {
-    if ( has_postMessage ) {
+
+  function postMessageFn( message, target_url, target ) {
+    if ( window['postMessage'] ) {
       // Default to parent if unspecified.
       if (target === undef){
         target = parent
@@ -116,12 +98,12 @@ or, lacking that, see http://benalman.com/about/license/
 
       // The browser supports window.postMessage, so call it with a targetOrigin
       // set appropriately, based on the target_url parameter.
-      target[postMessage]( message, target_url );
+      target['postMessage']( message, target_url );
 
       return true
     } 
     return false
-  };
+  }
   
   // Method: jQuery.receiveMessage
   // 
