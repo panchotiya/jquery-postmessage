@@ -5,9 +5,26 @@ top = '../'
 
 def default(context):
 	src = context.Node('jquery.ba-postmessage.js')
+	
+	# compiling global / jquery polluting version
 	minified = src - '.js' + '.min.js'
+	pre = src - '.js' + '_global_prefix.js'
+	suf = src - '.js' + '_global_suffix.js'
+
+	print("====== Compressing " + src.absolutepath + " into " + minified.absolutepath)
+	minified.text = compress_with_closure_compiler(
+		pre.text + src.text + suf.text
+	)
+
+	# compiling AMD version
+	minified = src - '.js' + '_amd.min.js'
+	pre = src - '.js' + '_amd_prefix.js'
+	suf = src - '.js' + '_amd_suffix.js'
+
 	print("========= Compressing " + src.path + " into " + minified.path)
-	minified.text = compress_with_closure_compiler(src.text)
+	minified.text = compress_with_closure_compiler(
+		pre.text + src.text + suf.text
+	)
 
 def compress_with_closure_compiler(code, compression_level = None):
 	'''Sends text of JavaScript code to Google's Closure Compiler API
@@ -32,8 +49,12 @@ def compress_with_closure_compiler(code, compression_level = None):
 	params = urllib.urlencode([
 	    ('js_code', code)
 	    , ('compilation_level', compression_level)
-	    , ('output_format', 'text')
+	    , ('output_format', 'json')
 	    , ('output_info', 'compiled_code')
+	    , ('output_info', 'warnings')
+	    , ('output_info', 'errors')
+	    , ('output_info', 'statistics')
+	    # , ('output_file_name', 'default.js')
 	    # , ('js_externs', 'javascript with externs') # only used on Advanced. 
 	  ])
 
@@ -42,10 +63,30 @@ def compress_with_closure_compiler(code, compression_level = None):
 	conn = httplib.HTTPConnection('closure-compiler.appspot.com')
 	conn.request('POST', '/compile', params, headers)
 	response = conn.getresponse()
+
+	if response.status != 200:
+		raise Exception("Compilation server responded with non-OK status of " + str(response.status))
+
 	compressedcode = response.read()
 	conn.close()
 
-	return compressedcode
+	import json
+	parts = json.loads(compressedcode)
+
+	if 'errors' in parts:
+		prettyerrors = ['\nCompilation Error:']
+		for error in parts['errors']:
+			prettyerrors.append(
+				"\nln %s, ch %s, '%s' - %s" % (
+					error['lineno']
+					, error['charno']
+					, error['line']
+					, error['error']
+				)
+			)
+		raise Exception(''.join(prettyerrors))
+
+	return parts['compiledCode']
 
 def test(context):
 	
