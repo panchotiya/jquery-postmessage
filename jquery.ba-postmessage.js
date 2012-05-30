@@ -50,11 +50,10 @@ or, lacking that, see http://benalman.com/about/license/
 // 0.5 - (9/11/2009) Improved cache-busting
 // 0.4 - (8/25/2009) Initial release
 
-(function($){
-  
-  // Method: jQuery.postMessage
+(function(APIHost){
   'use strict'
 
+  // Method: postMessage
   // 
   // This method will call window.postMessage if available, setting the
   // targetOrigin parameter to the base of the target_url parameter for maximum
@@ -62,7 +61,7 @@ or, lacking that, see http://benalman.com/about/license/
   // 
   // Usage:
   // 
-  // > jQuery.postMessage( message, target_url [, target ] );
+  // > .postMessage( message, target_url [, target ] );
   // 
   // Arguments:
   // 
@@ -104,6 +103,7 @@ or, lacking that, see http://benalman.com/about/license/
     } 
     return false
   }
+
 
   function PubSub(){
       'use strict'
@@ -189,7 +189,7 @@ or, lacking that, see http://benalman.com/about/license/
       }
   }
   
-  // Method: jQuery.receiveMessage
+  // Method: receiveMessage
   // 
   // Register a callback for a window.postMessage call. If window.postMessage
   // is supported and source_origin is specified, the message source window 
@@ -210,11 +210,11 @@ or, lacking that, see http://benalman.com/about/license/
   // 
   // Usage:
   // 
-  // > jQuery.receiveMessage( callback [, origin_url ] [, persistent ] );
+  // > .receiveMessage( callback [, origin_url ] [, persistent ] );
   // 
   // Arguments:
   // 
-  //  callback - (Function) This callback will execute whenever a <jQuery.postMessage>
+  //  callback - (Function) This callback will execute whenever a <postMessage>
   //    message is received, provided the source_origin matches. If callback is
   //    omitted, any existing receiveMessage event bind or polling loop will be
   //    canceled.
@@ -285,5 +285,9 @@ or, lacking that, see http://benalman.com/about/license/
     return undef
   }
 
-  
-})(jQuery);
+  return {
+    'receiveMessage': receiveMessageFn
+    , 'postMessage': postMessageFn
+  }
+
+})();
