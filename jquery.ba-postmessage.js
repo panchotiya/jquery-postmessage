@@ -104,6 +104,90 @@ or, lacking that, see http://benalman.com/about/license/
     } 
     return false
   }
+
+  function PubSub(){
+      'use strict'
+      /*  @preserve 
+      -----------------------------------------------------------------------------------------------
+      JavaScript PubSub library
+      2012 (c) ddotsenko@willowsystems.com
+      based on Peter Higgins (dante@dojotoolkit.org)
+      Loosely based on Dojo publish/subscribe API, limited in scope. Rewritten blindly.
+      Original is (c) Dojo Foundation 2004-2010. Released under either AFL or new BSD, see:
+      http://dojofoundation.org/license for more information.
+      -----------------------------------------------------------------------------------------------
+      */
+      this.topics = {};
+      /**
+       * Allows caller to emit an event and pass arguments to event listeners.
+       * @public
+       * @function
+       * @param topic {String} Name of the channel on which to voice this event
+       * @param **arguments Any number of arguments you want to pass to the listeners of this event.
+       */
+      this.publish = function(topic, arg1, arg2, etc) {
+          'use strict'
+          if (this.topics[topic]) {
+              var currentTopic = this.topics[topic]
+              , args = Array.prototype.slice.call(arguments, 1)
+              , toremove = []
+              , fn
+              , i, l
+
+              for (i = 0, l = currentTopic.length; i < l; i++) {
+                  // once flag set?
+                  if (currentTopic[i][1]){
+                    fn = currentTopic[i][0]
+                    currentTopic[i][0] = function(){}
+                    toremove.push(i)
+                  } else {
+                    currentTopic[i][0].apply(null, args)
+                  }
+              }
+              for (i = 0, l = toremove.length; i < l; i++) {
+                currentTopic.splice(toremove[i], 1)
+              }
+          }
+      }
+      /**
+       * Allows listener code to subscribe to channel and be called when data is available 
+       * @public
+       * @function
+       * @param topic {String} Name of the channel on which to voice this event
+       * @param callback {Function} Executable (function pointer) that will be ran when event is voiced on this channel.
+       * @param once {Boolean} (optional. False by default) Flag indicating if the function is to be triggered only once.
+       * @returns {Object} A token object that cen be used for unsubscribing.  
+       */
+      this.subscribe = function(topic, callback, once) {
+          'use strict'
+          if (!this.topics[topic]) {
+              this.topics[topic] = [[callback, once]];
+          } else {
+              this.topics[topic].push([callback,once]);
+          }
+          return {
+              "topic": topic,
+              "callback": callback
+          };
+      };
+      /**
+       * Allows listener code to unsubscribe from a channel 
+       * @public
+       * @function
+       * @param token {Object} A token object that was returned by `subscribe` method 
+       */
+      this.unsubscribe = function(token) {
+          if (this.topics[token.topic]) {
+              var currentTopic = this.topics[token.topic]
+              
+              for (var i = 0, l = currentTopic.length; i < l; i++) {
+                  if (currentTopic[i][0] === token.callback) {
+                      currentTopic.splice(i, 1)
+                  }
+              }
+          }
+      }
+  }
   
   // Method: jQuery.receiveMessage
   // 
@@ -126,7 +210,7 @@ or, lacking that, see http://benalman.com/about/license/
   // 
   // Usage:
   // 
-  // > jQuery.receiveMessage( callback [, source_origin ] [, delay ] );
+  // > jQuery.receiveMessage( callback [, origin_url ] [, persistent ] );
   // 
   // Arguments:
   // 
@@ -134,46 +218,72 @@ or, lacking that, see http://benalman.com/about/license/
   //    message is received, provided the source_origin matches. If callback is
   //    omitted, any existing receiveMessage event bind or polling loop will be
   //    canceled.
-  //  source_origin - (String) If window.postMessage is available and this value
+  //  origin_url - (String) If window.postMessage is available and this value
   //    is not equal to the event.origin property, the callback will not be
   //    called.
-  //  source_origin - (Function) If window.postMessage is available and this
-  //    function returns false when passed the event.origin property, the
-  //    callback will not be called.
+  //    Defaults to '*' (i.e. will listen to events from all origins).
+  //  persistent - (Boolean) If True, will run until event listener is
+  //    unbound. (See return value). If False, callback runs only once. 
+  //    False by default.
   // 
   // Returns:
   // 
-  //  True if messaging is supported and message has been (apparently) sent.
-  //  False otherwise
-  
-  $.receiveMessage = p_receiveMessage = function( callback, source_origin ) {
-    if ( has_postMessage ) {
-      if ( callback ) {
+  //  Callable object (function) that you can run to unbind the callback. Returned
+  //    only when the browser is found to support the messaging.
+  //  Undefined otherwise
 
+  var listeners
+  function receiveMessageFn( callback, origin_url, persistent ) {
+    'use strict'
 
-        // Unbind an existing callback if it exists.
-        rm_callback && p_receiveMessage();
-        
-        // Bind the callback. A reference to the callback is stored for ease of
-        // unbinding.
-        rm_callback = function(e) {
-          if ( ( typeof source_origin === 'string' && e.origin !== source_origin )
-            || ( $.isFunction( source_origin ) && source_origin( e.origin ) === false ) ) {
-            return false;
-          }
-          callback( e );
+    var undef
+
+    if ( window['postMessage'] && callback) {
+
+      // First, spinning up global listener for "Message" events.
+      // It will be one and only. Will publish events on proper
+      // chanlles within internal - `listeners` - PubSub instance.
+      if (!listeners) {
+        listeners = new PubSub()
+
+        function global_callback(e) {
+          listeners.publish(e.origin, e.data, e );
         };
+
+        if ( window['addEventListener'] ) {
+          window['addEventListener']( 'message', global_callback, false );
+        } else {
+          window['attachEvent']( 'onmessage', global_callback );
+        }
       }
-      
-      if ( window[addEventListener] ) {
-        window[ callback ? addEventListener : 'removeEventListener' ]( 'message', rm_callback, false );
+
+      if (origin_url === undef) {
+        // User explicitly chose not to care about domain of
+        // message recepient. Let's follow the command:
+        origin_url = '*'
+      } else if (typeof origin_url === 'string'){
+        // Messaging domain matching happens on
+        //  prefix://fqdn:port 
+        // chopping off everything else.
+        origin_url = origin_url.replace( /([^:]+:\/\/[^\/]+).*/, '$1' )
       } else {
-        window[ callback ? 'attachEvent' : 'detachEvent' ]( 'onmessage', rm_callback );
+        // a function? 
+        // whatever it is, we don't support you.
+        throw new Error(
+          "We don't support functions as origin conformance resolvers. Strings only.\n" + 
+          "Instead, just register your callback with '*' origin and make it decide" + 
+          "if it wants to handle it"
+        )
       }
-     
-      return true 
+
+      var token = listeners.subscribe(origin_url, callback, !persistent)
+
+      return function(){
+        listeners.unsubscribe(token)
+      }
     }
-    return false
-  };
+    return undef
+  }
+
   
 })(jQuery);
