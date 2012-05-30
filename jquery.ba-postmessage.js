@@ -1,27 +1,31 @@
 /*!
- * jQuery postMessage - v0.5 - 9/11/2009
- * http://benalman.com/projects/jquery-postmessage-plugin/
- * 
- * Copyright (c) 2009 "Cowboy" Ben Alman
- * Dual licensed under the MIT and GPL licenses.
- * http://benalman.com/about/license/
- */
+postMessage (optionally, jQuery plugin) - v2.0 - 2012
+http://github.com/willowsystems/jquery-postmessage
+ 
+Copyright (c) 2012 Willow Systems Corporation (willow-systems.com)
+Copyright (c) 2009 "Cowboy" Ben Alman
 
-// Script: jQuery postMessage: Cross-domain scripting goodness
+Dual licensed under the MIT and GPL v.2 licenses. 
+
+See source distribution bundle for full licenses texts,
+or, lacking that, see http://benalman.com/about/license/
+*/
+
+// Script: postMessage: Cross-domain messaging library
 //
-// *Version: 0.5, Last updated: 9/11/2009*
+// *Version: 2.0, Last updated: 2012-05-29*
 // 
-// Project Home - http://benalman.com/projects/jquery-postmessage-plugin/
-// GitHub       - http://github.com/cowboy/jquery-postmessage/
-// Source       - http://github.com/cowboy/jquery-postmessage/raw/master/jquery.ba-postmessage.js
-// (Minified)   - http://github.com/cowboy/jquery-postmessage/raw/master/jquery.ba-postmessage.min.js (0.9kb)
+// Project Home - https://github.com/willowsystems/jquery-postmessage
 // 
 // About: License
 // 
-// Copyright (c) 2009 "Cowboy" Ben Alman,
-// Dual licensed under the MIT and GPL licenses.
-// http://benalman.com/about/license/
-// 
+// Copyright (c) 2012 Willow Systems Corporation (willow-systems.com)
+// Copyright (c) 2009 "Cowboy" Ben Alman
+//
+// Dual licensed under the MIT and GPL v.2 licenses. 
+//
+// See source distribution bundle for full licenses texts, or, lacking that, see http://benalman.com/about/license/
+//
 // About: Examples
 // 
 // This working example, complete with fully commented code, illustrates one
@@ -34,11 +38,15 @@
 // Information about what version or versions of jQuery this plugin has been
 // tested with and what browsers it has been tested in.
 // 
-// jQuery Versions - 1.3.2
-// Browsers Tested - Internet Explorer 6-8, Firefox 3, Safari 3-4, Chrome, Opera 9.
+// Browsers Tested - Internet Explorer 8,9, recent Firefox, Safari, Chrome, Opera.
 // 
 // About: Release History
 // 
+// 2.0 - (2012-05-29) Gutted hash-based signalling. (no worky anymore. browsers are patched)
+//                    Switched to PubSub-based event handling to allow multiple listeners,
+//                    simplify unbinding, allow for multi-message listeners.
+//                    Removed object serialization (new browsers can pass objects)
+//                    It's no longer a jQuery plugin
 // 0.5 - (9/11/2009) Improved cache-busting
 // 0.4 - (8/25/2009) Initial release
 
