@@ -1,4 +1,4 @@
-/*!
+/** @preserve ---------------------------------------------------------------
 postMessage (optionally, jQuery plugin) - v2.0 - 2012
 http://github.com/willowsystems/jquery-postmessage
  
@@ -9,6 +9,7 @@ Dual licensed under the MIT and GPL v.2 licenses.
 
 See source distribution bundle for full licenses texts,
 or, lacking that, see http://benalman.com/about/license/
+---------------------------------------------------------------
 */
 
 // Script: postMessage: Cross-domain messaging library
